@@ -70,7 +70,7 @@ async fn basic_login(
     }
 
     let claims = JWTClaims::new(
-        &result.email,
+        &result.id.to_string(),
         "audience", // TODO: custom audience
         "issuer",
         Duration::seconds(3600),
@@ -88,11 +88,28 @@ async fn basic_login(
 
 async fn refresh(
     Extension(db): Extension<Pool<Sqlite>>,
+    claims: JWTClaims,
 ) -> Result<Json<JWTResponsePayload>, AuthError> {
     todo!("")
 }
 
-async fn me(Extension(db): Extension<Pool<Sqlite>>) {}
+async fn me(
+    Extension(db): Extension<Pool<Sqlite>>,
+    claims: JWTClaims,
+) -> Result<Json<AuthUserSchema>, AuthError> {
+    let sql = Query::select()
+        .from(Alias::new("auth_users"))
+        .column(Asterisk)
+        .and_where(Expr::col(Alias::new("id")).eq(claims.sub))
+        .to_string(SqliteQueryBuilder);
+
+    let result = sqlx::query_as::<_, AuthUserSchema>(&sql)
+        .fetch_one(&db)
+        .await
+        .map_err(|err| AuthError::Sqlx(err))?;
+
+    Ok(Json(result))
+}
 
 pub fn router() -> Router {
     Router::new()

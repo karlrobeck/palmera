@@ -1,5 +1,6 @@
+use axum::{extract::FromRequestParts, http::StatusCode};
 use chrono::{DateTime, Duration, Utc};
-use hmac::Hmac;
+use hmac::{Hmac, Mac};
 use jwt::{SignWithKey, VerifyWithKey};
 use password_auth::{generate_hash, verify_password};
 use serde::{Deserialize, Serialize};
@@ -49,13 +50,52 @@ pub struct JWTResponsePayload {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct JWTClaims {
-    sub: String,
+    pub sub: String,
     aud: String,
     exp: DateTime<Utc>,
     iat: DateTime<Utc>,
     nbf: DateTime<Utc>,
     jti: Uuid,
     iss: String,
+}
+
+impl<S> FromRequestParts<S> for JWTClaims
+where
+    S: Send + Sync,
+{
+    type Rejection = StatusCode;
+    async fn from_request_parts(
+        parts: &mut axum::http::request::Parts,
+        _: &S,
+    ) -> Result<Self, Self::Rejection> {
+        let auth_header = parts
+            .headers
+            .get("Authorization")
+            .ok_or(StatusCode::UNAUTHORIZED)?
+            .to_str()
+            .map_err(|_| StatusCode::UNAUTHORIZED)?;
+
+        // check for bearer format
+        let parts: Vec<&str> = auth_header.split(" ").collect();
+
+        if parts.len() != 2 {
+            return Err(StatusCode::UNAUTHORIZED);
+        }
+
+        let (format, token) = (parts[0], parts[1]);
+
+        if format.to_lowercase() != "bearer" {
+            return Err(StatusCode::UNAUTHORIZED);
+        }
+
+        Ok(Self::decrypt(
+            token,
+            &Hmac::new_from_slice(b"password-123").unwrap(),
+            "audience",
+            "issuer",
+        )
+        .map_err(|_| StatusCode::UNAUTHORIZED)?)
+    }
 }
 
 impl JWTClaims {

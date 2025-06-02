@@ -1,0 +1,26 @@
+[package]
+name = "palmera"
+version = "0.1.0"
+edition = "2024"
+
+[workspace]
+members = ["palmera-auth"]
+
+[dependencies]
+axum = { version = "0.8.4", features = ["macros"] }
+fexpr = { git = "https://github.com/karlrobeck/fexpr.git", version = "0.1.0" }
+sea-query = { version = "0.32.6", features = [
+  "thread-safe",
+  "backend-sqlite",
+  "with-uuid",
+  "with-chrono",
+] }
+sqlx = { version = "0.8.6", features = [
+  "runtime-tokio-native-tls",
+  "sqlite",
+  "uuid",
+  "chrono",
+] }
+tokio = { version = "1.45.1", features = ["full"] }
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }

@@ -1,0 +1,27 @@
+[package]
+name = "palmera-auth"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = "0.8.4"
+chrono = { version = "0.4.41", features = ["serde"] }
+hmac = "0.12.1"
+jwt = "0.16.0"
+password-auth = "1.0.0"
+rand_core = { version = "0.9.3", features = ["std"] }
+sea-query = { version = "0.32.6", features = [
+  "thread-safe",
+  "backend-sqlite",
+  "with-uuid",
+  "with-chrono",
+] }
+serde = { version = "1.0.219", features = ["derive"] }
+sha2 = "0.10.9"
+sqlx = { version = "0.8.6", features = [
+  "runtime-tokio-native-tls",
+  "sqlite",
+  "uuid",
+  "chrono",
+] }
+uuid = { version = "1.17.0", features = ["serde", "v4"] }

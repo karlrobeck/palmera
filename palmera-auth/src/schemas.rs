@@ -52,7 +52,7 @@ pub struct JWTResponsePayload {
 pub struct JWTClaims {
     pub sub: String,
     aud: String,
-    exp: DateTime<Utc>,
+    pub exp: DateTime<Utc>,
     iat: DateTime<Utc>,
     nbf: DateTime<Utc>,
     jti: Uuid,
@@ -100,7 +100,7 @@ where
 
 impl JWTClaims {
     pub fn new(sub: &str, aud: &str, iss: &str, exp_duration: Duration) -> Self {
-        let now = Utc::now().to_utc();
+        let now = Utc::now();
         Self {
             sub: sub.to_string(),
             aud: aud.to_string(),
@@ -124,7 +124,7 @@ impl JWTClaims {
     ) -> Result<Self, jwt::Error> {
         let claims: Self = token.verify_with_key(key).unwrap();
 
-        let now = Utc::now().to_utc();
+        let now = Utc::now();
 
         if claims.exp > now {
             todo!("return error")

@@ -2,7 +2,7 @@ use axum::{
     Extension, Form, Json, Router,
     routing::{get, post},
 };
-use chrono::Duration;
+use chrono::{Duration, Utc};
 use hmac::{Hmac, Mac};
 use sea_query::{Alias, Asterisk, Expr, Query, SqliteQueryBuilder};
 use serde::Deserialize;
@@ -86,11 +86,23 @@ async fn basic_login(
     }))
 }
 
-async fn refresh(
-    Extension(db): Extension<Pool<Sqlite>>,
-    claims: JWTClaims,
-) -> Result<Json<JWTResponsePayload>, AuthError> {
-    todo!("")
+async fn refresh(mut claims: JWTClaims) -> Result<Json<JWTResponsePayload>, AuthError> {
+    let now = Utc::now();
+
+    if claims.exp > now {
+        todo!("return error")
+    }
+
+    claims.exp = now + Duration::seconds(3600);
+
+    let token = claims
+        .encrypt(&Hmac::new_from_slice(b"password-123").unwrap())
+        .map_err(|err| AuthError::Jwt(err))?;
+
+    Ok(Json(JWTResponsePayload {
+        access_token: token.clone(),
+        refresh_token: token,
+    }))
 }
 
 async fn me(

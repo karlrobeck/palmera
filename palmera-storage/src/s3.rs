@@ -21,19 +21,27 @@ impl S3Storage {
 
 impl FileStorageHandler for S3Storage {
     async fn upload(&self, id: &str, name: &str, bytes: &[u8]) -> crate::traits::FileResult<()> {
-        // create bucket
-        let bucket = self
+        if !self
             .client
-            .create_bucket(id)
+            .bucket_exists(id)
             .send()
             .await
-            .map_err(|err| FileStorageError::S3(err))?;
+            .map_err(|err| FileStorageError::S3(err))?
+            .exists
+        {
+            // create bucket
+            self.client
+                .create_bucket(id)
+                .send()
+                .await
+                .map_err(|err| FileStorageError::S3(err))?;
+        }
 
         let content = ObjectContent::from(bytes.to_owned());
 
         _ = self
             .client
-            .put_object_content(bucket.bucket, name, content)
+            .put_object_content(id, name, content)
             .send()
             .await
             .map_err(|err| FileStorageError::S3(err))?;

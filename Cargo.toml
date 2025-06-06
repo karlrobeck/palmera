@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = [ "examples/auth-test","palmera-auth"]
+members = ["palmera-auth", "palmera-storage", "examples/*"]
 
 [dependencies]
 axum = { version = "0.8.4", features = ["macros"] }
@@ -21,6 +21,6 @@ sqlx = { version = "0.8.6", features = [
   "uuid",
   "chrono",
 ] }
-tokio = { version = "1.45.1", features = ["full"] }
+tokio = { version = "1.45.1", features = ["fs", "full"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }

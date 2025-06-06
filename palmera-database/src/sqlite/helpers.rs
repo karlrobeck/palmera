@@ -1,48 +1,4 @@
-use sea_query::{Alias, ColumnDef, Expr, Func, FunctionCall, Table, TableCreateStatement};
-
-pub fn table_info(table_name: &str) -> FunctionCall {
-    Func::cust("pragma_table_info").arg(table_name)
-}
-
-pub fn table_list() -> FunctionCall {
-    Func::cust("pragma_table_list")
-}
-
-pub fn table_xinfo(table_name: &str) -> FunctionCall {
-    Func::cust("pragma_table_xinfo").arg(table_name)
-}
-
-pub fn foreign_key_list(table_name: &str) -> FunctionCall {
-    Func::cust("pragma_foreign_key_list").arg(table_name)
-}
-
-pub fn index_list(table_name: &str) -> FunctionCall {
-    Func::cust("pragma_index_list").arg(table_name)
-}
-
-pub fn index_info(index_name: &str) -> FunctionCall {
-    Func::cust("pragma_index_info").arg(index_name)
-}
-
-pub fn index_xinfo(index_name: &str) -> FunctionCall {
-    Func::cust("pragma_index_xinfo").arg(index_name)
-}
-
-pub fn database_list() -> FunctionCall {
-    Func::cust("pragma_database_list")
-}
-
-pub fn collation_list() -> FunctionCall {
-    Func::cust("pragma_collation_list")
-}
-
-pub fn function_list() -> FunctionCall {
-    Func::cust("pragma_function_list")
-}
-
-pub fn module_list() -> FunctionCall {
-    Func::cust("pragma_module_list")
-}
+use sea_query::{Alias, ColumnDef, Expr, Table, TableCreateStatement};
 
 pub fn create_policy_table() -> TableCreateStatement {
     Table::create()

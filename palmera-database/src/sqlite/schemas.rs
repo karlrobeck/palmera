@@ -3,9 +3,9 @@ use sqlx::{FromRow, Pool, Sqlite};
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct TableDetails {
-    pub name: Option<String>,
-    pub r#type: String,
-    pub schema: String,
+    pub name: String,
+    pub r#type: Option<String>,
+    pub schema: Option<String>,
     pub sql: Option<String>,
     #[sqlx(json)]
     pub policies: Vec<Policy>,
@@ -18,7 +18,7 @@ pub struct Policy {
     pub id: i64,
     pub name: Option<String>,
     pub description: Option<String>,
-    pub is_enabled: i64,
+    pub is_enabled: i16,
     pub operation: Option<String>,
     pub policy_type: Option<String>,
     pub using_expr: Option<String>,
@@ -27,15 +27,15 @@ pub struct Policy {
 
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct ColumnDetails {
-    pub column_id: i64,
+    pub column_id: Option<i64>,
     pub column_name: String,
-    pub data_type: Option<String>,
-    pub is_not_null: i64,
+    pub data_type: String,
+    pub is_not_null: i16,
     pub default_value: Option<String>,
-    pub is_primary_key: i64,
-    pub primary_key_order: i64,
+    pub is_primary_key: i16,
+    pub primary_key_order: Option<i64>,
     pub generated_column_type: Option<i64>,
-    pub is_foreign_key: i64,
+    pub is_foreign_key: i16,
     pub reference_table: Option<String>,
     pub reference_column: Option<String>,
     pub foreign_key_on_update: Option<String>,

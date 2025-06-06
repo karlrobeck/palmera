@@ -1,0 +1,10 @@
+[package]
+name = "s3-storage-example"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+minio = "0.3.0"
+palmera-storage = { path = "../../palmera-storage" }
+tempdir = "0.3.7"
+tokio = "1.45.1"

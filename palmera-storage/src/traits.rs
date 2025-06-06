@@ -1,9 +1,30 @@
-// path format /<id>/<file_name>
+use std::fmt;
 
 #[derive(Debug)]
 pub enum FileStorageError {
     Local(std::io::Error),
     S3(minio::s3::error::Error),
+    Io(std::io::Error),
+}
+
+impl fmt::Display for FileStorageError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            FileStorageError::Local(e) => write!(f, "Local error: {}", e),
+            FileStorageError::S3(e) => write!(f, "S3 error: {}", e),
+            FileStorageError::Io(e) => write!(f, "IO error: {}", e),
+        }
+    }
+}
+
+impl std::error::Error for FileStorageError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            FileStorageError::Local(e) => Some(e),
+            FileStorageError::S3(e) => Some(e),
+            FileStorageError::Io(e) => Some(e),
+        }
+    }
 }
 
 pub type FileResult<T> = Result<T, FileStorageError>;

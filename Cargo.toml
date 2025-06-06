@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = ["palmera-auth", "palmera-storage", "examples/*"]
+members = ["palmera-storage", "examples/*", "palmera-database"]
 
 [dependencies]
 axum = { version = "0.8.4", features = ["macros"] }
@@ -15,12 +15,7 @@ sea-query = { version = "0.32.6", features = [
   "with-uuid",
   "with-chrono",
 ] }
-sqlx = { version = "0.8.6", features = [
-  "runtime-tokio-native-tls",
-  "sqlite",
-  "uuid",
-  "chrono",
-] }
+sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "sqlite", "uuid", "chrono", "migrate", "runtime-tokio"] }
 tokio = { version = "1.45.1", features = ["fs", "full"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }

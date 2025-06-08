@@ -1,5 +1,5 @@
 pub struct Handler<T> {
-    func: Box<dyn Fn(&T) -> Result<(), anyhow::Error>>,
+    func: Box<dyn Fn(&mut T) -> Result<(), anyhow::Error>>,
     id: String,
     priority: i16,
 }
@@ -15,7 +15,7 @@ impl<T> Hook<T> {
 
     pub fn bind<F>(&mut self, callback: F)
     where
-        F: Fn(&T) -> Result<(), anyhow::Error> + Send + 'static,
+        F: Fn(&mut T) -> Result<(), anyhow::Error> + Send + 'static,
     {
         self.handlers.push(Handler {
             func: Box::new(callback),
@@ -28,9 +28,9 @@ impl<T> Hook<T> {
         self.handlers.len()
     }
 
-    pub fn trigger(&mut self, value: T) {
+    pub fn trigger(&mut self, value: &mut T) {
         for handler in &self.handlers {
-            if let Err(err) = (handler.func)(&value) {
+            if let Err(err) = (handler.func)(value) {
                 println!("{err}");
             }
         }
@@ -39,7 +39,7 @@ impl<T> Hook<T> {
 
 #[cfg(test)]
 mod test {
-    use crate::events::Hook;
+    use crate::hook::Hook;
 
     struct FooStruct {
         bar: String,
@@ -49,16 +49,16 @@ mod test {
     fn test() {
         let mut hook: Hook<FooStruct> = Hook::new();
 
-        hook.bind(|v| {
-            println!("{}", v.bar);
-
+        hook.bind(|v: &mut FooStruct| {
+            v.bar = "hello".into();
             Ok(())
         });
 
-        hook.bind(|_| Err(anyhow::anyhow!("im an error")));
-
-        _ = hook.trigger(FooStruct {
+        let mut foo = FooStruct {
             bar: "hello world".into(),
-        });
+        };
+        _ = hook.trigger(&mut foo);
+
+        assert_eq!(foo.bar, "hello");
     }
 }

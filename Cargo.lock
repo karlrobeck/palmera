@@ -1523,6 +1523,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "palmera-core"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "thiserror",
+]
+
+[[package]]
 name = "palmera-database"
 version = "0.1.0"
 dependencies = [

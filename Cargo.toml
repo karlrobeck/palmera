@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [workspace]
-members = ["palmera-storage", "examples/*", "palmera-database"]
+members = ["palmera-storage", "examples/*", "palmera-database", "palmera-core"]
 
 [dependencies]
 axum = { version = "0.8.4", features = ["macros"] }

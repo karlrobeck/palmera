@@ -1,28 +1,36 @@
-#[derive(Debug, Clone)]
-pub enum Event {
-    OnBootstrap(String),
-    OnServe,
+pub struct Handler<T> {
+    func: Box<dyn Fn(&T) -> Result<(), anyhow::Error>>,
+    id: String,
+    priority: i16,
 }
 
-pub struct EventHandler {
-    handlers: Vec<Box<dyn Fn(&Event) -> Result<(), anyhow::Error>>>,
+pub struct Hook<T> {
+    handlers: Vec<Handler<T>>,
 }
 
-impl EventHandler {
+impl<T> Hook<T> {
     pub fn new() -> Self {
         Self { handlers: vec![] }
     }
 
     pub fn bind<F>(&mut self, callback: F)
     where
-        F: Fn(&Event) -> Result<(), anyhow::Error> + 'static,
+        F: Fn(&T) -> Result<(), anyhow::Error> + Send + 'static,
     {
-        self.handlers.push(Box::new(callback));
+        self.handlers.push(Handler {
+            func: Box::new(callback),
+            id: "".into(),
+            priority: -1,
+        });
     }
 
-    pub fn trigger(&mut self, event: Event) {
+    pub fn length(&self) -> usize {
+        self.handlers.len()
+    }
+
+    pub fn trigger(&mut self, value: T) {
         for handler in &self.handlers {
-            if let Err(err) = handler(&event) {
+            if let Err(err) = (handler.func)(&value) {
                 println!("{err}");
             }
         }
@@ -31,27 +39,26 @@ impl EventHandler {
 
 #[cfg(test)]
 mod test {
-    use crate::events::{Event, EventHandler};
+    use crate::events::Hook;
+
+    struct FooStruct {
+        bar: String,
+    }
 
     #[test]
     fn test() {
-        let mut dispatcher = EventHandler::new();
-        dispatcher.bind(foo_callback);
-        dispatcher.bind(foo_callback2);
-        dispatcher.trigger(Event::OnBootstrap("i just got triggered!!".into()));
-    }
+        let mut hook: Hook<FooStruct> = Hook::new();
 
-    fn foo_callback(event: &Event) -> Result<(), anyhow::Error> {
-        if let Event::OnBootstrap(value) = event {
-            println!("{value}");
-        }
-        Ok(())
-    }
+        hook.bind(|v| {
+            println!("{}", v.bar);
 
-    fn foo_callback2(event: &Event) -> Result<(), anyhow::Error> {
-        if let Event::OnBootstrap(value) = event {
-            println!("{value}");
-        }
-        Ok(())
+            Ok(())
+        });
+
+        hook.bind(|_| Err(anyhow::anyhow!("im an error")));
+
+        _ = hook.trigger(FooStruct {
+            bar: "hello world".into(),
+        });
     }
 }

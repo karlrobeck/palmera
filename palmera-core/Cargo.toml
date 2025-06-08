@@ -6,3 +6,4 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.98"
 thiserror = "2.0.12"
+uuid = { version = "1.17.0", features = ["v4"] }

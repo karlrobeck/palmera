@@ -1527,7 +1527,9 @@ name = "palmera-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "futures",
  "thiserror",
+ "tokio",
  "uuid",
 ]
 

@@ -16,6 +16,6 @@ sea-query = { version = "0.32.6", features = [
   "with-chrono",
 ] }
 sqlx = { version = "0.8.6", features = ["runtime-tokio-native-tls", "sqlite", "uuid", "chrono", "migrate", "runtime-tokio"] }
-tokio = { version = "1.45.1", features = ["fs", "full"] }
+tokio = { version = "1.45.1", features = ["fs", "full", "test-util"] }
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "json"] }

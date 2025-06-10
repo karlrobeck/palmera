@@ -4,10 +4,7 @@ use uuid::Uuid;
 
 // New HandlerFn with Higher-Ranked Trait Bound (HRTB)
 pub type HandlerFn<T> = Box<
-    dyn for<'a> Fn(&'a mut T) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'a>>
-        + Send
-        + Sync
-        + 'static,
+    dyn Fn(&T) -> Pin<Box<dyn Future<Output = anyhow::Result<T>> + Send>> + Send + Sync + 'static,
 >;
 
 pub struct Handler<T> {
@@ -20,7 +17,7 @@ pub struct Hook<T> {
     handlers: Vec<Handler<T>>,
 }
 
-impl<T: Send> Hook<T> {
+impl<T: Send + 'static> Hook<T> {
     // T must be Send if you want to use it across awaits
     pub fn new() -> Self {
         Self { handlers: vec![] }
@@ -40,12 +37,12 @@ impl<T: Send> Hook<T> {
     // New bind_fn signature
     pub fn bind_fn<F>(&mut self, callback: F) -> String
     where
-        F: for<'a> Fn(&'a mut T) -> Pin<Box<dyn Future<Output = anyhow::Result<()>> + Send + 'a>>
+        F: Fn(&T) -> Pin<Box<dyn Future<Output = anyhow::Result<T>> + Send>>
             + Send
             + Sync
             + 'static,
     {
-        let func: HandlerFn<T> = Box::new(move |value: &mut T| Box::pin(callback(value)));
+        let func: HandlerFn<T> = Box::new(move |value: &T| Box::pin(callback(value)));
         self.bind(Handler {
             func,
             id: None,
@@ -69,12 +66,14 @@ impl<T: Send> Hook<T> {
         self.handlers.len()
     }
 
-    pub async fn trigger(&mut self, value: &mut T) -> Vec<anyhow::Error> {
+    pub fn listen(&self) {
+        todo!("starts a tokio channel and return trigger")
+    }
+
+    pub async fn trigger(&mut self, value: &T) -> Vec<anyhow::Result<T>> {
         let mut errors = vec![];
         for handler in &self.handlers {
-            if let Err(err) = (handler.func)(value).await {
-                errors.push(err);
-            }
+            errors.push((handler.func)(value).await);
         }
         errors
     }
@@ -85,85 +84,93 @@ fn generate_hook_id() -> String {
 }
 
 #[cfg(test)]
-mod test {
-
-    use crate::hook::{Handler, Hook};
-    use anyhow::Result;
-
-    async fn dummy_handler(val: &mut i32) -> Result<()> {
-        *val += 1;
-        Ok(())
-    }
+mod tests {
+    use super::*;
+    use std::future;
+    use std::sync::{Arc, Mutex};
 
     #[tokio::test]
     async fn test_bind_and_trigger() {
-        let mut hook = Hook::<i32>::new();
-        let id = hook.bind_fn(|val| Box::pin(dummy_handler(val)));
-        let mut value = 0;
-        let errors = hook.trigger(&mut value).await;
-        assert!(errors.is_empty());
-        assert_eq!(value, 1);
-        assert_eq!(hook.length(), 1);
-        assert!(!id.is_empty());
+        let counter = Arc::new(Mutex::new(0));
+        let counter_clone = counter.clone();
+        let mut hook = Hook::new();
+        hook.bind_fn(move |_val: &i32| {
+            let counter = counter_clone.clone();
+            Box::pin(async move {
+                let mut num = counter.lock().unwrap();
+                *num += 1;
+                Ok(*num)
+            })
+        });
+        let results = hook.trigger(&10).await;
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].as_ref().unwrap(), &1);
     }
 
     #[tokio::test]
     async fn test_unbind() {
-        let mut hook = Hook::<i32>::new();
-        let id = hook.bind_fn(|val| Box::pin(dummy_handler(val)));
+        let mut hook = Hook::new();
+        let id = hook.bind_fn(|_val: &i32| Box::pin(future::ready(Ok(1))));
         assert_eq!(hook.length(), 1);
-        hook.unbind(id.clone()).unwrap();
+        hook.unbind(id).unwrap();
         assert_eq!(hook.length(), 0);
-        // Unbinding again should error
-        assert!(hook.unbind(id).is_err());
     }
 
     #[tokio::test]
     async fn test_priority_order() {
-        let mut hook = Hook::<i32>::new();
-        // Handler that adds 10, with higher priority (lower number)
-        let handler1: Handler<i32> = Handler {
-            func: Box::new(|val| {
+        let mut hook = Hook::new();
+        let order_ref = Arc::new(Mutex::new(Vec::<i32>::new()));
+        let order1 = order_ref.clone();
+        let order2 = order_ref.clone();
+        let order3 = order_ref.clone();
+        // Handler with priority 2
+        let handler1 = Handler {
+            func: Box::new(move |_| {
+                let order = order1.clone();
                 Box::pin(async move {
-                    *val += 10;
-                    Ok(())
+                    order.lock().unwrap().push(2);
+                    Ok(2)
                 })
             }),
             id: None,
-            priority: Some(-10),
+            priority: Some(2),
         };
-        // Handler that multiplies by 2, default priority
-        let handler2: Handler<i32> = Handler {
-            func: Box::new(|val| {
+        // Handler with priority 1
+        let handler2 = Handler {
+            func: Box::new(move |_| {
+                let order = order2.clone();
                 Box::pin(async move {
-                    *val *= 2;
-                    Ok(())
+                    order.lock().unwrap().push(1);
+                    Ok(1)
                 })
             }),
             id: None,
-            priority: None,
+            priority: Some(1),
         };
-        hook.bind(handler2);
+        // Handler with priority 3
+        let handler3 = Handler {
+            func: Box::new(move |_| {
+                let order = order3.clone();
+                Box::pin(async move {
+                    order.lock().unwrap().push(3);
+                    Ok(3)
+                })
+            }),
+            id: None,
+            priority: Some(3),
+        };
         hook.bind(handler1);
-        let mut value = 1;
-        let _ = hook.trigger(&mut value).await;
-        // handler1 runs first: 1+10=11, then handler2: 11*2=22
-        assert_eq!(value, 22);
+        hook.bind(handler2);
+        hook.bind(handler3);
+        let _ = hook.trigger(&0).await;
+        let order = order_ref.lock().unwrap().clone();
+        assert_eq!(order, vec![1, 2, 3]);
     }
 
     #[tokio::test]
-    async fn test_handler_error() {
+    async fn test_unbind_nonexistent() {
         let mut hook = Hook::<i32>::new();
-        // Handler that always errors
-        let handler: Handler<i32> = Handler {
-            func: Box::new(|_| Box::pin(async move { Err(anyhow::anyhow!("fail")) })),
-            id: None,
-            priority: None,
-        };
-        hook.bind(handler);
-        let mut value = 0;
-        let errors = hook.trigger(&mut value).await;
-        assert_eq!(errors.len(), 1);
-        assert_eq!(hook.length(), 1);
+        let result = hook.unbind("nonexistent".to_string());
+        assert!(result.is_err());
     }
 }

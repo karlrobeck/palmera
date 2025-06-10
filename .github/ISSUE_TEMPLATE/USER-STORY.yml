@@ -1,0 +1,83 @@
+name: "🚀 New Feature User Story"
+description: "File a new user story complete with acceptance criteria and a task breakdown."
+title: "[FEATURE]: "
+labels: ["feature"]
+body:
+  - type: markdown
+    attributes:
+      value: "Please fill out the details below based on the output from the project management AI prompt. This ensures all necessary information is captured for the development team."
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: "Priority"
+      description: "Select the priority level determined during the planning phase."
+      options:
+        - "P1 - Critical (MVP)"
+        - "P2 - High (MVP)"
+        - "P3 - Medium (Post-MVP)"
+        - "P4 - Low (Post-MVP)"
+    validations:
+      required: true
+
+  - type: input
+    id: epic
+    attributes:
+      label: "Epic"
+      description: "The high-level feature or category this user story belongs to."
+      placeholder: "e.g., User Account Management"
+    validations:
+      required: true
+
+  - type: textarea
+    id: user-story
+    attributes:
+      label: "User Story"
+      description: "Paste the full user story here."
+      placeholder: "As a [Persona], I want [to perform an action], so that [I can achieve a goal]."
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: "Acceptance Criteria"
+      description: "Paste the testable conditions that must be met for this story to be considered complete. One criterion per line."
+      placeholder: |
+        - GIVEN [some context] WHEN [I perform an action] THEN [I should see this result]
+        - The system validates the input fields correctly.
+        - An error message is displayed for invalid input.
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: "--- \n ### Task Breakdown"
+
+  - type: textarea
+    id: tasks-design
+    attributes:
+      label: "🎨 Design Tasks"
+      description: "List all UI/UX design tasks required."
+      placeholder: "No design tasks required OR list tasks here..."
+
+  - type: textarea
+    id: tasks-backend
+    attributes:
+      label: "⚙️ Backend Development Tasks"
+      description: "List all backend/API/database tasks required."
+      placeholder: "No backend tasks required OR list tasks here..."
+
+  - type: textarea
+    id: tasks-frontend
+    attributes:
+      label: "🖥️ Frontend Development Tasks"
+      description: "List all frontend/UI development tasks required."
+      placeholder: "No frontend tasks required OR list tasks here..."
+
+  - type: textarea
+    id: tasks-qa
+    attributes:
+      label: "🧪 Testing / QA Tasks"
+      description: "List all testing and quality assurance tasks required to validate the acceptance criteria."
+      placeholder: "No QA tasks required OR list tasks here..."

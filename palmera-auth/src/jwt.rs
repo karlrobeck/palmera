@@ -28,7 +28,7 @@ use hmac::{Hmac, Mac};
 use jwt::{SignWithKey, VerifyWithKey};
 use serde::{Deserialize, Serialize};
 use sha2::Sha256;
-use sqlx::types::Uuid;
+use uuid::Uuid;
 
 /// Represents the standard claims contained in a JWT (JSON Web Token).
 ///

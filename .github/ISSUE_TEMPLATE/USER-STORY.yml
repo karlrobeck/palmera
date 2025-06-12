@@ -5,7 +5,7 @@ labels: ["feature"]
 body:
   - type: markdown
     attributes:
-      value: "Please fill out the details below based on the output from the project management AI prompt. This ensures all necessary information is captured for the development team."
+      value: "Please fill out the details below based on the output. This ensures all necessary information is captured for the development team."
 
   - type: dropdown
     id: priority

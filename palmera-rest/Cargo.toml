@@ -1,0 +1,33 @@
+[package]
+name = "palmera-rest"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum = { version = "0.8.4", features = ["macros", "multipart"] }
+minio = "0.3.0"
+sqlx = { version = "0.8.6", features = [
+  "runtime-tokio-native-tls",
+  "postgres",
+  "uuid",
+  "chrono",
+  "json",
+] }
+utoipa = { version = "5.3.1", features = [
+  "axum_extras",
+  "chrono",
+  "url",
+  "uuid",
+] }
+utoipa-axum = "0.2.0"
+palmera-auth = { path = "../palmera-auth" }
+sea-query = { version = "0.32.6", features = [
+  "thread-safe",
+  "backend-postgres",
+  "with-uuid",
+  "with-chrono",
+  "with-json",
+] }
+anyhow = "1.0.98"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = { version = "1.0.140", features = ["raw_value"] }

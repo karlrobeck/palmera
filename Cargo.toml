@@ -9,7 +9,7 @@ members = [
   "examples/*",
   "palmera-database",
   "palmera-core",
-  "palmera-auth",
+  "palmera-auth", "palmera-rest",
 ]
 
 [dependencies]

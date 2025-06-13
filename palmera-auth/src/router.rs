@@ -15,7 +15,7 @@ pub struct LoginPayload {
     password: String,
 }
 
-#[utoipa::path(get, path = "/login")]
+#[utoipa::path(post, path = "/login")]
 async fn login(
     Extension(db): Extension<Pool<Postgres>>,
     Form(form): Form<LoginPayload>,

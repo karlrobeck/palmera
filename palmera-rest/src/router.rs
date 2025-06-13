@@ -11,7 +11,7 @@ use serde_json::Value;
 use sqlx::{Executor, Pool, Postgres, prelude::FromRow};
 use utoipa_axum::{router::OpenApiRouter, routes};
 
-use crate::utils::json_to_sea;
+use crate::utils::{json_to_sea, set_variable};
 
 #[derive(Debug, Deserialize)]
 pub struct TableSchema {
@@ -32,6 +32,11 @@ async fn create(
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     let mut trx = db
         .begin()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    // set variables
+    _ = set_variable(&mut trx, "@request.method", "post")
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 

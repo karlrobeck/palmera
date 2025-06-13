@@ -1,5 +1,6 @@
 use sea_query::Value as SeaValue;
 use serde_json::Value as JsonValue;
+use sqlx::{Pool, Postgres, Transaction, postgres::PgQueryResult};
 
 pub fn json_to_sea(value: &JsonValue) -> SeaValue {
     match value {
@@ -18,4 +19,14 @@ pub fn json_to_sea(value: &JsonValue) -> SeaValue {
         JsonValue::String(s) => SeaValue::String(Some(Box::new(s.to_string()))),
         JsonValue::Array(_) | JsonValue::Object(_) => SeaValue::Json(Some(Box::new(value.clone()))),
     }
+}
+
+pub async fn set_variable<'a>(
+    trx: &mut Transaction<'a, Postgres>,
+    name: &str,
+    var: &str,
+) -> anyhow::Result<PgQueryResult> {
+    Ok(sqlx::query(&format!("set local {} = '{}'", name, var))
+        .execute(&mut **trx)
+        .await?)
 }

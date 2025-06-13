@@ -22,15 +22,15 @@ async fn login(
     Form(form): Form<LoginPayload>,
 ) -> Result<String, StatusCode> {
     if form.validate().is_err() {
-        return Err(StatusCode::BAD_REQUEST);
+        return Err(StatusCode::UNAUTHORIZED);
     }
 
     let db_user = AuthUser::find_by_email(&form.email, &db)
         .await
-        .map_err(|_| StatusCode::BAD_REQUEST)?;
+        .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
     if db_user.verify_password(&form.password).is_err() {
-        return Err(StatusCode::BAD_REQUEST);
+        return Err(StatusCode::UNAUTHORIZED);
     }
 
     let claims = JWTClaims::new(
@@ -42,7 +42,7 @@ async fn login(
 
     Ok(claims
         .sign(&config.key)
-        .map_err(|_| StatusCode::BAD_REQUEST)?)
+        .map_err(|_| StatusCode::UNAUTHORIZED)?)
 }
 
 pub fn router() -> OpenApiRouter {

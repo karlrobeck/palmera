@@ -1,9 +1,16 @@
-//! User authentication schema and password utilities for Palmera Auth.
+//! # Palmera Auth: User Authentication Schema and Utilities
 //!
-//! This module defines the [`AuthUser`] struct, which represents a user in the authentication
-//! system, and provides methods for securely creating users and verifying passwords using Argon2.
+//! This module provides the [`AuthUser`] struct, representing a user in the Palmera authentication system.
+//! It includes secure password hashing and verification using Argon2, as well as database operations
+//! for inserting and retrieving users. All timestamps are handled in UTC.
 //!
-//! # Example
+//! ## Features
+//!
+//! - Secure password storage with Argon2 and random salt
+//! - Password verification
+//! - Insert and query users from a PostgreSQL database
+//!
+//! ## Example
 //!
 //! ```rust
 //! use palmera_auth::schemas::AuthUser;
@@ -14,9 +21,7 @@
 use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
 use chrono::{DateTime, Utc};
 use password_hash::{SaltString, rand_core::OsRng};
-use sea_query::{
-    Alias, Asterisk, ConditionalStatement, Expr, PostgresQueryBuilder, Query, QueryStatementWriter,
-};
+use sea_query::{Alias, Asterisk, Expr, PostgresQueryBuilder, Query};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres, prelude::FromRow};
 use uuid::Uuid;
@@ -24,10 +29,14 @@ use uuid::Uuid;
 #[derive(Debug, FromRow, Clone, Serialize, Deserialize)]
 /// Represents an authenticated user in the Palmera system.
 ///
-/// This struct stores the user's unique identifier, email, hashed password,
-/// and timestamps for creation and last update. Passwords are hashed using Argon2.
+/// Fields:
+/// - `id`: Unique identifier (UUID)
+/// - `email`: User's email address
+/// - `password`: Argon2-hashed password (with salt and parameters)
+/// - `created`: UTC timestamp of creation
+/// - `updated`: UTC timestamp of last update
 pub struct AuthUser {
-    /// Unique identifier for the user.
+    /// Unique identifier for the user (UUID).
     pub id: Uuid,
     /// User's email address.
     pub email: String,
@@ -40,7 +49,7 @@ pub struct AuthUser {
 }
 
 impl AuthUser {
-    /// Creates a new `AuthUser` with a hashed password and generated salt.
+    /// Create a new `AuthUser` with a securely hashed password and generated salt.
     ///
     /// # Arguments
     ///
@@ -49,7 +58,7 @@ impl AuthUser {
     ///
     /// # Returns
     ///
-    /// A new `AuthUser` instance with a securely hashed password and timestamps set to now.
+    /// A new `AuthUser` instance with a hashed password and current timestamps.
     pub fn new(email: &str, password: &str) -> Self {
         let now = Utc::now();
 
@@ -69,7 +78,7 @@ impl AuthUser {
         }
     }
 
-    /// Verifies a plaintext password against the stored Argon2 hash.
+    /// Verify a plaintext password against the stored Argon2 hash.
     ///
     /// # Arguments
     ///
@@ -88,15 +97,15 @@ impl AuthUser {
 
     // database operation
 
-    /// Inserts the current `AuthUser` into the database and returns the inserted user.
+    /// Insert this `AuthUser` into the database and return the inserted user.
     ///
     /// # Arguments
     ///
-    /// * `db` - A reference to a SQLx Postgres connection pool.
+    /// * `db` - Reference to a SQLx Postgres connection pool.
     ///
     /// # Returns
     ///
-    /// Returns the inserted `AuthUser` as stored in the database, including any fields set by the database.
+    /// The inserted `AuthUser` as stored in the database.
     ///
     /// # Errors
     ///
@@ -126,16 +135,16 @@ impl AuthUser {
         Ok(result)
     }
 
-    /// Finds an `AuthUser` by their unique identifier.
+    /// Find an `AuthUser` by their unique identifier.
     ///
     /// # Arguments
     ///
     /// * `id` - The user's unique identifier as a string.
-    /// * `db` - A reference to a SQLx Postgres connection pool.
+    /// * `db` - Reference to a SQLx Postgres connection pool.
     ///
     /// # Returns
     ///
-    /// Returns the `AuthUser` if found, or an error if not found or if the database operation fails.
+    /// The `AuthUser` if found, or an error if not found or if the database operation fails.
     pub async fn find_by_id(id: &str, db: &Pool<Postgres>) -> anyhow::Result<Self> {
         let sql = Query::select()
             .from((Alias::new("auth"), Alias::new("users")))
@@ -148,16 +157,16 @@ impl AuthUser {
         Ok(result)
     }
 
-    /// Finds an `AuthUser` by their email address.
+    /// Find an `AuthUser` by their email address.
     ///
     /// # Arguments
     ///
     /// * `email` - The user's email address.
-    /// * `db` - A reference to a SQLx Postgres connection pool.
+    /// * `db` - Reference to a SQLx Postgres connection pool.
     ///
     /// # Returns
     ///
-    /// Returns the `AuthUser` if found, or an error if not found or if the database operation fails.
+    /// The `AuthUser` if found, or an error if not found or if the database operation fails.
     pub async fn find_by_email(email: &str, db: &Pool<Postgres>) -> anyhow::Result<Self> {
         let sql = Query::select()
             .from((Alias::new("auth"), Alias::new("users")))

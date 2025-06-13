@@ -1,4 +1,4 @@
-//! JWT (JSON Web Token) utilities for Palmera Auth
+//! # JWT (JSON Web Token) utilities for Palmera Auth
 //!
 //! This module provides the `JWTClaims` struct and associated methods for creating,
 //! signing, and verifying JWTs using HMAC-SHA256. It leverages the `chrono` crate for

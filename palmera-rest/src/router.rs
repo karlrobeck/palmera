@@ -5,6 +5,7 @@ use axum::{
     extract::{Multipart, Path},
     http::StatusCode,
 };
+use minio::s3::Client;
 use sea_query::{Alias, Expr, Func, PostgresQueryBuilder, Query, QueryStatementWriter, SimpleExpr};
 use serde::Deserialize;
 use serde_json::Value;
@@ -27,6 +28,7 @@ pub struct TableResult {
 #[utoipa::path(post, path = "/{schema}/{table}")]
 async fn create(
     Extension(db): Extension<Pool<Postgres>>,
+    Extension(storage): Extension<Client>,
     Path(table_ref): Path<TableSchema>,
     mut multipart: Multipart,
 ) -> Result<Json<serde_json::Value>, StatusCode> {

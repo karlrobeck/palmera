@@ -1,0 +1,36 @@
+[package]
+name = "palmera-auth"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.98"
+argon2 = "0.5.3"
+axum = { version = "0.8.4", features = ["macros"] }
+chrono = { version = "0.4.41", features = ["serde"] }
+hmac = "0.12.1"
+jwt = "0.16.0"
+password-hash = "0.5.0"
+sea-query = { version = "0.32.6", features = [
+  "thread-safe",
+  "backend-postgres",
+  "with-uuid",
+  "with-chrono",
+] }
+serde = { version = "1.0.219", features = ["derive"] }
+sha2 = "0.10.9"
+sqlx = { version = "0.8.6", features = [
+  "runtime-tokio-native-tls",
+  "postgres",
+  "chrono",
+  "uuid",
+] }
+utoipa = { version = "5.3.1", features = [
+  "axum_extras",
+  "chrono",
+  "url",
+  "uuid",
+] }
+utoipa-axum = "0.2.0"
+uuid = { version = "1.17.0", features = ["serde", "v4"] }
+validator = { version = "0.20.0", features = ["derive"] }

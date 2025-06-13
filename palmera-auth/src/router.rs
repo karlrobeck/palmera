@@ -6,7 +6,7 @@ use utoipa::ToSchema;
 use utoipa_axum::{router::OpenApiRouter, routes};
 use validator::Validate;
 
-use crate::{jwt::JWTClaims, schemas::AuthUser};
+use crate::{AuthConfig, jwt::JWTClaims, schemas::AuthUser};
 
 #[derive(Debug, ToSchema, Deserialize, Validate)]
 pub struct LoginPayload {
@@ -18,6 +18,7 @@ pub struct LoginPayload {
 #[utoipa::path(post, path = "/login")]
 async fn login(
     Extension(db): Extension<Pool<Postgres>>,
+    Extension(config): Extension<AuthConfig>,
     Form(form): Form<LoginPayload>,
 ) -> Result<String, StatusCode> {
     if form.validate().is_err() {
@@ -35,12 +36,12 @@ async fn login(
     let claims = JWTClaims::new(
         db_user.id,
         Duration::seconds(3600),
-        "issuer".into(),
-        "audience".into(),
+        config.issuer,
+        config.audience,
     );
 
     Ok(claims
-        .sign("secret-key")
+        .sign(&config.key)
         .map_err(|_| StatusCode::BAD_REQUEST)?)
 }
 

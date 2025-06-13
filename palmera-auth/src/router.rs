@@ -48,3 +48,111 @@ async fn login(
 pub fn router() -> OpenApiRouter {
     OpenApiRouter::new().routes(routes!(login))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::AuthConfig;
+    use crate::jwt::JWTClaims;
+    use crate::schemas::AuthUser;
+    use axum::Form;
+    use axum::extract::Extension;
+    use chrono::Utc;
+    use sqlx::{Pool, Postgres};
+
+    fn test_config() -> AuthConfig {
+        AuthConfig {
+            issuer: "test-issuer".to_string(),
+            audience: "test-audience".to_string(),
+            key: "test-secret-key".to_string(),
+        }
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn test_login_success(db: Pool<Postgres>) -> anyhow::Result<()> {
+        let email = "loginuser@example.com";
+        let password = "testpassword";
+        let user = AuthUser::new(email, password);
+        user.clone().insert(&db).await?;
+        let config = test_config();
+        let payload = LoginPayload {
+            email: email.to_string(),
+            password: password.to_string(),
+        };
+        let result = login(Extension(db), Extension(config), Form(payload)).await;
+        assert!(
+            result.is_ok(),
+            "Login should succeed with correct credentials"
+        );
+        Ok(())
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn test_login_wrong_password(db: Pool<Postgres>) -> anyhow::Result<()> {
+        let email = "wrongpass@example.com";
+        let password = "rightpass";
+        let user = AuthUser::new(email, password);
+        user.clone().insert(&db).await?;
+        let config = test_config();
+        let payload = LoginPayload {
+            email: email.to_string(),
+            password: "wrongpass".to_string(),
+        };
+        let result = login(Extension(db), Extension(config), Form(payload)).await;
+        assert!(result.is_err(), "Login should fail with wrong password");
+        Ok(())
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn test_login_nonexistent_email(db: Pool<Postgres>) -> anyhow::Result<()> {
+        let config = test_config();
+        let payload = LoginPayload {
+            email: "doesnotexist@example.com".to_string(),
+            password: "irrelevant".to_string(),
+        };
+        let result = login(Extension(db), Extension(config), Form(payload)).await;
+        assert!(result.is_err(), "Login should fail for nonexistent user");
+        Ok(())
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn test_jwt_structure(db: Pool<Postgres>) -> anyhow::Result<()> {
+        let email = "jwtstruct@example.com";
+        let password = "jwtpass";
+        let user = AuthUser::new(email, password);
+        user.clone().insert(&db).await?;
+        let config = test_config();
+        let payload = LoginPayload {
+            email: email.to_string(),
+            password: password.to_string(),
+        };
+        let result = login(Extension(db), Extension(config), Form(payload))
+            .await
+            .unwrap();
+        let parts: Vec<&str> = result.split('.').collect();
+        assert_eq!(parts.len(), 3, "JWT should have 3 parts");
+        Ok(())
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn test_jwt_claims(db: Pool<Postgres>) -> anyhow::Result<()> {
+        let email = "jwtclaims@example.com";
+        let password = "jwtpass";
+        let user = AuthUser::new(email, password);
+        let inserted = user.clone().insert(&db).await?;
+        let config = test_config();
+        let payload = LoginPayload {
+            email: email.to_string(),
+            password: password.to_string(),
+        };
+        let jwt = login(Extension(db), Extension(config.clone()), Form(payload))
+            .await
+            .unwrap();
+        let claims = JWTClaims::verify(&jwt, &config.key)?;
+
+        assert_eq!(claims.subject, inserted.id);
+        let now = Utc::now();
+        assert!(claims.expiration > now, "exp should be in the future");
+        Ok(())
+    }
+}
